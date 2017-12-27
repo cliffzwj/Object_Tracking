@@ -102,9 +102,9 @@ if __name__ == '__main__':
     parser.add_argument('-ht', '--height', dest='height', type=int,
                         default=360, help='Height of the frames in the video stream.')
     parser.add_argument('-num-w', '--num-workers', dest='num_workers', type=int,
-                        default=2, help='Number of workers.')
+                        default=4, help='Number of workers.')
     parser.add_argument('-q-size', '--queue-size', dest='queue_size', type=int,
-                        default=5, help='Size of the queue.')
+                        default=10, help='Size of the queue.')
     args = parser.parse_args()
 
     logger = multiprocessing.log_to_stderr()
