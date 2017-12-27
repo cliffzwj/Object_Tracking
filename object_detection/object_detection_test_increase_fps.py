@@ -1,14 +1,16 @@
-from multiprocessing import Queue, Pool
-
 import cv2
 import numpy as np
 import os
 import sys
 import tarfile
+import time
+import argparse
 import tensorflow as tf
 import multiprocessing
 
-from object_detection.webvideo import WebcamVideoStream
+from multiprocessing import Queue, Pool
+
+from object_detection.mytools.app_utils import WebcamVideoStream, FPS
 
 sys.path.append("..")
 from object_detection.utils import label_map_util
@@ -67,55 +69,75 @@ def detect_objects(image_np, sess, detection_graph):
     return image_np
 
 
-# 参数配置
-class configs(object):
-    def __init__(self):
-        self.num_workers = 2  # worker数量
-        self.queue_size = 5  # 多进程，输入输出，队列长度
-        self.video_source = 0  # 0代表从摄像头读取视频流
-        self.width = 1024  # 图片宽
-        self.height = 800  # 图片高
-
-
-args = configs()
-
-
 # 定义用于多进程执行的函数word，每个进程执行work函数，都会加载一次模型
 def worker(input_q, output_q):
+    # Load a (frozen) Tensorflow model into memory.
     detection_graph = tf.Graph()
-    with detection_graph.as_default():  # 加载模型
+    with detection_graph.as_default():
         od_graph_def = tf.GraphDef()
         with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
             serialized_graph = fid.read()
             od_graph_def.ParseFromString(serialized_graph)
             tf.import_graph_def(od_graph_def, name='')
+
         sess = tf.Session(graph=detection_graph)
 
-    while True:  # 全局变量input_q与output_q定义，请看下文
-        frame = input_q.get()  # 从多进程输入队列，取值
-        output_q.put(detect_objects(frame, sess, detection_graph))  # detect_objects函数 返回一张图片，标记所有被发现的物品
+    fps = FPS().start()
+    while True:
+        fps.update()
+        frame = input_q.get()
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        output_q.put(detect_objects(frame_rgb, sess, detection_graph))
+
+    fps.stop()
     sess.close()
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-src', '--source', dest='video_source', type=int,
+                        default=0, help='Device index of the camera.')
+    parser.add_argument('-wd', '--width', dest='width', type=int,
+                        default=480, help='Width of the frames in the video stream.')
+    parser.add_argument('-ht', '--height', dest='height', type=int,
+                        default=360, help='Height of the frames in the video stream.')
+    parser.add_argument('-num-w', '--num-workers', dest='num_workers', type=int,
+                        default=2, help='Number of workers.')
+    parser.add_argument('-q-size', '--queue-size', dest='queue_size', type=int,
+                        default=5, help='Size of the queue.')
+    args = parser.parse_args()
 
-    input_q = Queue(maxsize=args.queue_size)  # 多进程输入队列
-    output_q = Queue(maxsize=args.queue_size)  # 多进程输出队列
+    logger = multiprocessing.log_to_stderr()
+    logger.setLevel(multiprocessing.SUBDEBUG)
+
+    input_q = Queue(maxsize=args.queue_size)
+    output_q = Queue(maxsize=args.queue_size)
     pool = Pool(args.num_workers, worker, (input_q, output_q))
 
     video_capture = WebcamVideoStream(src=args.video_source,
                                       width=args.width,
                                       height=args.height).start()
+    fps = FPS().start()
 
-    while True:
-        frame = video_capture.read()  # video_capture多线程读取视频流
-        input_q.put(frame)  # 视频帧放入多进程输入队列
-        frame = output_q.get()  # 多进程输出队列取出标记好物体的图片
+    while True:  # fps._numFrames < 120
+        frame = video_capture.read()
+        input_q.put(frame)
 
-        cv2.imshow('Video', frame)  # 展示已标记物体的图片
+        t = time.time()
+
+        output_rgb = cv2.cvtColor(output_q.get(), cv2.COLOR_RGB2BGR)
+        cv2.imshow('Video', output_rgb)
+        fps.update()
+
+        print('[INFO] elapsed time: {:.2f}'.format(time.time() - t))
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    pool.terminate()  # 关闭多进程
-    video_capture.stop()  # 关闭视频流
-    cv2.destroyAllWindows()  # opencv窗口关闭
+    fps.stop()
+    print('[INFO] elapsed time (total): {:.2f}'.format(fps.elapsed()))
+    print('[INFO] approx. FPS: {:.2f}'.format(fps.fps()))
+
+    pool.terminate()
+    video_capture.stop()
+    cv2.destroyAllWindows()
