@@ -40,7 +40,8 @@ category_index = label_map_util.create_category_index(categories)
 
 #add for gpu support
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.7
+config.gpu_options.allow_growth = True
+# config.gpu_options.per_process_gpu_memory_fraction = 0.7
 
 # 物体识别神经网络，向前传播获得识别结果
 def detect_objects(image_np, sess, detection_graph):
@@ -107,7 +108,7 @@ if __name__ == '__main__':
     parser.add_argument('-ht', '--height', dest='height', type=int,
                         default=360, help='Height of the frames in the video stream.')
     parser.add_argument('-num-w', '--num-workers', dest='num_workers', type=int,
-                        default=1, help='Number of workers.')
+                        default=2, help='Number of workers.')
     parser.add_argument('-q-size', '--queue-size', dest='queue_size', type=int,
                         default=5, help='Size of the queue.')
     args = parser.parse_args()

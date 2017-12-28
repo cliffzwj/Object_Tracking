@@ -40,7 +40,8 @@ category_index = label_map_util.create_category_index(categories)
 
 #add for gpu support
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.7
+config.gpu_options.allow_growth = True
+# config.gpu_options.per_process_gpu_memory_fraction = 0.7
 
 
 # 物体识别神经网络，向前传播获得识别结果

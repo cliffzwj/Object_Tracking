@@ -59,7 +59,8 @@ IMAGE_SIZE = (12, 8)
 
 #add for gpu support
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.7
+config.gpu_options.allow_growth = True
+# config.gpu_options.per_process_gpu_memory_fraction = 0.7
 
 # In[10]:
 with detection_graph.as_default():
