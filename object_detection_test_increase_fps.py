@@ -38,6 +38,9 @@ categories = label_map_util.convert_label_map_to_categories(label_map, max_num_c
                                                             use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
+#add for gpu support
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.7
 
 # 物体识别神经网络，向前传播获得识别结果
 def detect_objects(image_np, sess, detection_graph):
@@ -82,7 +85,7 @@ def worker(input_q, output_q):
             od_graph_def.ParseFromString(serialized_graph)
             tf.import_graph_def(od_graph_def, name='')
 
-        sess = tf.Session(graph=detection_graph)
+        sess = tf.Session(graph=detection_graph, config=config)
 
     fps = FPS().start()
     while True:
@@ -104,9 +107,9 @@ if __name__ == '__main__':
     parser.add_argument('-ht', '--height', dest='height', type=int,
                         default=360, help='Height of the frames in the video stream.')
     parser.add_argument('-num-w', '--num-workers', dest='num_workers', type=int,
-                        default=4, help='Number of workers.')
+                        default=1, help='Number of workers.')
     parser.add_argument('-q-size', '--queue-size', dest='queue_size', type=int,
-                        default=10, help='Size of the queue.')
+                        default=5, help='Size of the queue.')
     args = parser.parse_args()
 
     logger = multiprocessing.log_to_stderr()

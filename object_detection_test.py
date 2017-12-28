@@ -56,9 +56,14 @@ PATH_TO_TEST_IMAGES_DIR = 'test_images'
 TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 3)]
 # Size, in inches, of the output images.
 IMAGE_SIZE = (12, 8)
+
+#add for gpu support
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.7
+
 # In[10]:
 with detection_graph.as_default():
-    with tf.Session(graph=detection_graph) as sess:
+    with tf.Session(graph=detection_graph,config=config) as sess:
         while True:  # for image_path in TEST_IMAGE_PATHS:    #changed 20170825
             ret, image_np = cap.read()
             # Expand dimensions since the model expects images to have shape: [1, None, None, 3]

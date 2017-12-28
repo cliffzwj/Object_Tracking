@@ -38,6 +38,10 @@ categories = label_map_util.convert_label_map_to_categories(label_map, max_num_c
                                                             use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
+#add for gpu support
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.7
+
 
 # 物体识别神经网络，向前传播获得识别结果
 def detect_objects(image_np, sess, detection_graph):
@@ -81,7 +85,7 @@ def worker(input_q, output_q):
             od_graph_def.ParseFromString(serialized_graph)
             tf.import_graph_def(od_graph_def, name='')
 
-        sess = tf.Session(graph=detection_graph)
+        sess = tf.Session(graph=detection_graph, config=config)
 
     fps = FPS().start()
     while True:
