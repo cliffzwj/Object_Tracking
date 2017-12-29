@@ -13,7 +13,8 @@ from PIL import Image
 
 CWD_PATH = os.getcwd()
 cap = cv2.VideoCapture(0)
-
+frmcnt = 1
+timeF = 2  # 视频帧计数间隔频率
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
@@ -24,6 +25,8 @@ PATH_TO_CKPT = os.path.join(CWD_PATH, MODEL_NAME, 'frozen_inference_graph.pb')
 # List of the strings that is used to add correct label for each box.
 PATH_TO_LABELS = os.path.join(CWD_PATH, 'object_detection', 'data', 'mscoco_label_map.pbtxt')
 NUM_CLASSES = 90
+FRAM_TICK = 2  # 视频帧计数间隔频率
+
 # opener = urllib.request.URLopener()
 # opener.retrieve(DOWNLOAD_BASE + MODEL_NAME + '.tar.gz', MODEL_FILE)
 # tar_file = tarfile.open(MODEL_FILE)
@@ -57,40 +60,42 @@ TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i
 # Size, in inches, of the output images.
 IMAGE_SIZE = (12, 8)
 
-#add for gpu support
+# add for gpu support
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 # config.gpu_options.per_process_gpu_memory_fraction = 0.7
 
 # In[10]:
 with detection_graph.as_default():
-    with tf.Session(graph=detection_graph,config=config) as sess:
+    with tf.Session(graph=detection_graph, config=config) as sess:
         while True:  # for image_path in TEST_IMAGE_PATHS:    #changed 20170825
             ret, image_np = cap.read()
-            # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
-            image_np_expanded = np.expand_dims(image_np, axis=0)
-            image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
-            # Each box represents a part of the image where a particular object was detected.
-            boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
-            # Each score represent how level of confidence for each of the objects.
-            # Score is shown on the result image, together with the class label.
-            scores = detection_graph.get_tensor_by_name('detection_scores:0')
-            classes = detection_graph.get_tensor_by_name('detection_classes:0')
-            num_detections = detection_graph.get_tensor_by_name('num_detections:0')
-            # Actual detection.
-            (boxes, scores, classes, num_detections) = sess.run(
-                [boxes, scores, classes, num_detections],
-                feed_dict={image_tensor: image_np_expanded})
-            # Visualization of the results of a detection.
-            vis_util.visualize_boxes_and_labels_on_image_array(
-                image_np,
-                np.squeeze(boxes),
-                np.squeeze(classes).astype(np.int32),
-                np.squeeze(scores),
-                category_index,
-                use_normalized_coordinates=True,
-                line_thickness=8)
+            if (frmcnt % FRAM_TICK == 0):  # 每隔timeF帧进行存储操作
+                # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
+                image_np_expanded = np.expand_dims(image_np, axis=0)
+                image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
+                # Each box represents a part of the image where a particular object was detected.
+                boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
+                # Each score represent how level of confidence for each of the objects.
+                # Score is shown on the result image, together with the class label.
+                scores = detection_graph.get_tensor_by_name('detection_scores:0')
+                classes = detection_graph.get_tensor_by_name('detection_classes:0')
+                num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+                # Actual detection.
+                (boxes, scores, classes, num_detections) = sess.run(
+                    [boxes, scores, classes, num_detections],
+                    feed_dict={image_tensor: image_np_expanded})
+                # Visualization of the results of a detection.
+                vis_util.visualize_boxes_and_labels_on_image_array(
+                    image_np,
+                    np.squeeze(boxes),
+                    np.squeeze(classes).astype(np.int32),
+                    np.squeeze(scores),
+                    category_index,
+                    use_normalized_coordinates=True,
+                    line_thickness=8)
             cv2.imshow('object detection', cv2.resize(image_np, (1024, 800)))
+            frmcnt = frmcnt + 1
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 cv2.destroyAllWindows()
                 break

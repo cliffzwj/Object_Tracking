@@ -12,7 +12,6 @@ from multiprocessing import Queue, Pool
 
 from mytools.app_utils import WebcamVideoStream, FPS
 
-
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
@@ -25,6 +24,8 @@ PATH_TO_CKPT = os.path.join(CWD_PATH, MODEL_NAME, 'frozen_inference_graph.pb')
 # List of the strings that is used to add correct label for each box.
 PATH_TO_LABELS = os.path.join(CWD_PATH, 'object_detection', 'data', 'mscoco_label_map.pbtxt')
 NUM_CLASSES = 90
+FRAM_TICK = 2  # 视频帧计数间隔频率
+
 # opener = urllib.request.URLopener()
 # opener.retrieve(DOWNLOAD_BASE + MODEL_NAME + '.tar.gz', MODEL_FILE)
 # tar_file = tarfile.open(MODEL_FILE)
@@ -38,9 +39,11 @@ categories = label_map_util.convert_label_map_to_categories(label_map, max_num_c
                                                             use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
 
-#add for gpu support
+# add for gpu support
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
+
+
 # config.gpu_options.per_process_gpu_memory_fraction = 0.7
 
 # 物体识别神经网络，向前传播获得识别结果
@@ -77,6 +80,7 @@ def detect_objects(image_np, sess, detection_graph):
 
 # 定义用于多进程执行的函数word，每个进程执行work函数，都会加载一次模型
 def worker(input_q, output_q):
+    frmcnt = 1  # 帧数计数器
     # Load a (frozen) Tensorflow model into memory.
     detection_graph = tf.Graph()
     with detection_graph.as_default():
@@ -93,8 +97,11 @@ def worker(input_q, output_q):
         fps.update()
         frame = input_q.get()
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        output_q.put(detect_objects(frame_rgb, sess, detection_graph))
-
+        if (frmcnt % FRAM_TICK == 0):  # 每隔timeF帧进行存储操作
+            output_q.put(detect_objects(frame_rgb, sess, detection_graph))
+        else:
+            output_q.put(frame_rgb)
+        frmcnt = frmcnt + 1
     fps.stop()
     sess.close()
 
@@ -134,7 +141,6 @@ if __name__ == '__main__':
         output_rgb = cv2.cvtColor(output_q.get(), cv2.COLOR_RGB2BGR)
         cv2.imshow('Video', output_rgb)
         fps.update()
-
         print('[INFO] elapsed time: {:.2f}'.format(time.time() - t))
 
         if cv2.waitKey(1) & 0xFF == ord('q'):

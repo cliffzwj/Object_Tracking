@@ -17,3 +17,7 @@ a usage on tensorflow object detection API
 
 1.将tensorflow更新为1.4.0的GPU版本，使用的显卡为Geforce 940M（笔记本），相关参数作调整以达到最佳fps
 2.将显卡的显存使用修改为按需，这样可以在采用多进程加载tf.sessions的时候，自动控制显存使用
+
+2017.12.29
+
+增加视频流采样间隔配置参数，用来调整需要处理的帧，从而使不同设备达到最佳FPS
