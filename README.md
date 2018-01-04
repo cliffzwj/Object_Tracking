@@ -21,3 +21,10 @@ a usage on tensorflow object detection API
 2017.12.29
 
 增加视频流采样间隔配置参数，用来调整需要处理的帧，从而使不同设备达到最佳FPS
+
+2018.1.4
+
+加入自定义的object数据集，本例采用"吃鸡"的游戏数据集
+使用方法，先用create_tf_record.py把数据转为tfrecord供训练，再使用：
+
+python object_detection/train.py --logtostderr --train_dir=train --pipeline_config_path=faster_rcnn_resnet101.config进行训练

@@ -1,0 +1,26 @@
+<annotation>
+	<folder>images</folder>
+	<filename>jdqs71.jpeg</filename>
+	<path>D:\PycharmProjects\Object_Tracking\images\jdqs71.jpeg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>1024</width>
+		<height>600</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>Target Person</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>433</xmin>
+			<ymin>79</ymin>
+			<xmax>622</xmax>
+			<ymax>569</ymax>
+		</bndbox>
+	</object>
+</annotation>
