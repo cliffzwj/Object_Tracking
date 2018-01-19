@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from PIL import Image
 
 CWD_PATH = os.getcwd()
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture("./vedio/IMG_0659.MOV")
 frmcnt = 1
 timeF = 2  # 视频帧计数间隔频率
 from object_detection.utils import label_map_util
@@ -70,6 +70,9 @@ with detection_graph.as_default():
     with tf.Session(graph=detection_graph, config=config) as sess:
         while True:  # for image_path in TEST_IMAGE_PATHS:    #changed 20170825
             ret, image_np = cap.read()
+            rows, cols, channel = image_np.shape
+            M = cv2.getRotationMatrix2D((cols / 2, rows / 2), 270, 1.0)
+            image_np = cv2.warpAffine(image_np, M, (cols, rows))
             if (frmcnt % FRAM_TICK == 0):  # 每隔timeF帧进行存储操作
                 # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
                 image_np_expanded = np.expand_dims(image_np, axis=0)
